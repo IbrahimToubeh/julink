@@ -1,8 +1,7 @@
-package com.example.jutalk.entryrelated.repo;
+package com.example.julink.entryrelated.repo;
 
-import com.example.jutalk.entryrelated.Users;
+import com.example.julink.entryrelated.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 

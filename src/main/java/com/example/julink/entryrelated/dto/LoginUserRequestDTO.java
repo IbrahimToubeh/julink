@@ -1,4 +1,4 @@
-package com.example.jutalk.entryrelated.dto;
+package com.example.julink.entryrelated.dto;
 
 public record LoginUserRequestDTO(String username, String password) {
 }

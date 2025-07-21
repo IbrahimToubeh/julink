@@ -1,7 +1,7 @@
-package com.example.jutalk.config;
+package com.example.julink.config;
 
-import com.example.jutalk.entryrelated.Users;
-import com.example.jutalk.entryrelated.repo.UserRepo;
+import com.example.julink.entryrelated.entity.Users;
+import com.example.julink.entryrelated.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

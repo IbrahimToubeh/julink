@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>jutalk</artifactId>
+	<artifactId>julink</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>jutalk</name>
 	<description>A social media app for JU students to interact with each other</description>

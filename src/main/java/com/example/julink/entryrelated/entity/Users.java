@@ -1,4 +1,4 @@
-package com.example.jutalk.entryrelated;
+package com.example.julink.entryrelated.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

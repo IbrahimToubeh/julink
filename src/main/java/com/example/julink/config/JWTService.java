@@ -1,4 +1,4 @@
-package com.example.jutalk.config;
+package com.example.julink.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

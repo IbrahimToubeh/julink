@@ -1,13 +1,13 @@
-package com.example.jutalk;
+package com.example.julink;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class JutalkApplication {
+public class JulinkApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(JutalkApplication.class, args);
+		SpringApplication.run(JulinkApplication.class, args);
 	}
 
 }

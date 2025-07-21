@@ -1,7 +1,7 @@
-package com.example.jutalk.filter;
+package com.example.julink.filter;
 
-import com.example.jutalk.config.JWTService;
-import com.example.jutalk.config.MyUserDetailsService;
+import com.example.julink.config.JWTService;
+import com.example.julink.config.MyUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
