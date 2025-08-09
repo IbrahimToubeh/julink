@@ -19,14 +19,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class BulkController {
+    //todo: delete comment / delete post / delete account / deactivate account / follow user / view following list / followrs list / delete profile picture
+
 
     private final PostService postService;
     private final ProfileService profileService;
@@ -68,9 +72,11 @@ public class BulkController {
 
     @PostMapping("/posts")
     public ResponseEntity<PostDto> createPost(@RequestBody PostDto postDto,
-                                              @AuthenticationPrincipal UserPrincipal userPrincipal) {
+                                              @AuthenticationPrincipal UserPrincipal userPrincipal,
+                                              @RequestParam("file") MultipartFile file) throws IOException {
         postDto.setAuthorId(getUserId(userPrincipal));
         postDto.setAuthorUsername(userPrincipal.getUsername());
+        postDto.setImageFile(file);
         PostDto created = postService.createPost(postDto);
         return ResponseEntity.ok(created);
     }

@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -64,14 +65,15 @@ public class PostServiceImpl implements PostService {
         return dto;
     }
 
-    private Post toEntity(PostDto dto) {
+    private Post toEntity(PostDto dto) throws IOException {
         Post post = new Post();
         if (dto.getId() != null) post.setId(dto.getId());
         post.setContent(dto.getContent());
         post.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
         post.setEditedAt(dto.getEditedAt());
         post.setTaggedColleges(new HashSet<>(collegeRepo.findAllById(dto.getTaggedCollegeIds())));
-
+        post.setImage(dto.getImageFile().getBytes());
+        post.setTitle(post.getTitle());
         // Always load author from DB by ID to avoid trusting client
         Users author = userRepo.findById(dto.getAuthorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
@@ -82,7 +84,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostDto createPost(PostDto postDto) {
+    public PostDto createPost(PostDto postDto) throws IOException {
         Post post = toEntity(postDto);
         post.setCreatedAt(LocalDateTime.now());
         post.setAuthor(userRepo.findByUsername(postDto.getAuthorUsername()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")));

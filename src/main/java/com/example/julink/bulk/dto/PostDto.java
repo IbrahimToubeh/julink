@@ -1,6 +1,7 @@
 package com.example.julink.bulk.dto;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,4 +16,7 @@ public class PostDto {
     private List<Long> taggedCollegeIds;
     private String authorUsername;
     private long likeCount;
+    private byte[] image;
+    private String postTitle;
+    private MultipartFile imageFile;
 }
