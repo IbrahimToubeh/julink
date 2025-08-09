@@ -23,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,15 +67,51 @@ public class PostServiceImpl implements PostService {
     }
 
     private Post toEntity(PostDto dto) throws IOException {
+        if (dto == null) {
+            throw new IllegalArgumentException("PostDto cannot be null");
+        }
+
         Post post = new Post();
-        if (dto.getId() != null) post.setId(dto.getId());
-        post.setContent(dto.getContent());
+
+        // ID
+        if (dto.getId() != null) {
+            post.setId(dto.getId());
+        }
+
+        // Content
+        if (dto.getContent() != null) {
+            post.setContent(dto.getContent());
+        }
+
+        // CreatedAt
         post.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
-        post.setEditedAt(dto.getEditedAt());
-        post.setTaggedColleges(new HashSet<>(collegeRepo.findAllById(dto.getTaggedCollegeIds())));
-        post.setImage(dto.getImageFile().getBytes());
-        post.setTitle(post.getTitle());
-        // Always load author from DB by ID to avoid trusting client
+
+        // EditedAt
+        if (dto.getEditedAt() != null) {
+            post.setEditedAt(dto.getEditedAt());
+        }
+
+        // Tagged colleges
+        if (dto.getTaggedCollegeIds() != null && !dto.getTaggedCollegeIds().isEmpty()) {
+            post.setTaggedColleges(new HashSet<>(collegeRepo.findAllById(dto.getTaggedCollegeIds())));
+        } else {
+            post.setTaggedColleges(Collections.emptySet());
+        }
+
+        // Image
+        if (dto.getImageFile() != null && !dto.getImageFile().isEmpty()) {
+            post.setImage(dto.getImageFile().getBytes());
+        }
+
+        // Title
+        if (dto.getPostTitle() != null) {
+            post.setTitle(dto.getPostTitle());
+        }
+
+        // Author
+        if (dto.getAuthorId() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Author ID is required");
+        }
         Users author = userRepo.findById(dto.getAuthorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         post.setAuthor(author);
