@@ -91,7 +91,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public void resetPasswordAfterOTP(String email, String newPassword) {
         OTPClass otp = otpRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("OTP not found"));
+                .orElseThrow( () -> new RuntimeException("No OTP found for this email")  );
+
+
 
         if (!otp.isVerified()) {
             throw new RuntimeException("OTP not verified. Please verify it first.");
@@ -105,6 +107,19 @@ public class UserServiceImpl implements UserService {
 
         otp.setVerified(false);
         otpRepository.save(otp);
+    }
+
+    @Override
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
     }
 
 

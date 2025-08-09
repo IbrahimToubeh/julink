@@ -15,4 +15,6 @@ public interface UserService {
 
     void resetPasswordAfterOTP(String email, String newPassword);
 
+    void changePassword(String username, String currentPassword, String newPassword);
+
 }

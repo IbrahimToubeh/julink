@@ -1,6 +1,6 @@
 package com.example.julink.entryrelated.dto;
 
 public record CreateUserRequestDTO(String firstName, String lastName, String email
-        ,String password,String major,String username,String confirmedPassword,String college) {
+        ,String password,String major,String username,String confirmedPassword,Long collegeId) {
 
 }

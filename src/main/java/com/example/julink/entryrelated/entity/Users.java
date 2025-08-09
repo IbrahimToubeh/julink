@@ -1,5 +1,6 @@
 package com.example.julink.entryrelated.entity;
 
+import com.example.julink.bulk.entity.College;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +9,7 @@ import lombok.ToString;
 @Entity
 @Getter
 @Setter
-@ToString
+@ToString(exclude = "profileImage")
 @Table(name = "users")
 public class Users {
 
@@ -37,8 +38,12 @@ public class Users {
     @Column(nullable = true)
     private String major;
 
-    @Column(nullable = true)
-    private String college;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "college_id", nullable = false)
+    private College college;
+
+    @Column(name = "profile_image")
+    private byte[] profileImage;
 
 
 }
