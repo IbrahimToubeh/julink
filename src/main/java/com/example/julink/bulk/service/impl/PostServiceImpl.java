@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -43,17 +45,52 @@ public class PostServiceImpl implements PostService {
     // Mapper methods
 
     private PostDto toDto(Post post) {
+        if (post == null) {
+            return null;
+        }
+
         PostDto dto = new PostDto();
+
+        // ID
         dto.setId(post.getId());
-        dto.setAuthorId(post.getAuthor().getId());
+
+        // Author
+        if (post.getAuthor() != null) {
+            dto.setAuthorId(post.getAuthor().getId());
+            dto.setAuthorUsername(post.getAuthor().getUsername());
+        }
+
+        // Content
         dto.setContent(post.getContent());
+
+        // Title
+        dto.setPostTitle(post.getTitle());
+
+        // Timestamps
         dto.setCreatedAt(post.getCreatedAt());
         dto.setEditedAt(post.getEditedAt());
-        dto.setTaggedCollegeIds(post.getTaggedColleges().stream().map(College::getId).toList());
-        dto.setLikeCount(likeRepo.countByPost(post));
-        dto.setAuthorUsername(post.getAuthor().getUsername());
+
+        // Tagged colleges
+        if (post.getTaggedColleges() != null && !post.getTaggedColleges().isEmpty()) {
+            dto.setTaggedCollegeIds(
+                    post.getTaggedColleges().stream()
+                            .filter(Objects::nonNull)
+                            .map(College::getId)
+                            .toList()
+            );
+        } else {
+            dto.setTaggedCollegeIds(Collections.emptyList());
+        }
+
+        // Likes
+        dto.setLikeCount(post.getLikes() != null ? post.getLikes().size() : 0);
+
+        // Image
+        dto.setImage(post.getImage());
+
         return dto;
     }
+
 
     private CommentDto toDto(Comment comment) {
         CommentDto dto = new CommentDto();
@@ -81,15 +118,20 @@ public class PostServiceImpl implements PostService {
         // Content
         if (dto.getContent() != null) {
             post.setContent(dto.getContent());
+        } else {
+            post.setContent(""); // default empty string if null
+        }
+
+        // Title
+        if (dto.getPostTitle() != null) {
+            post.setTitle(dto.getPostTitle());
         }
 
         // CreatedAt
         post.setCreatedAt(dto.getCreatedAt() != null ? dto.getCreatedAt() : LocalDateTime.now());
 
         // EditedAt
-        if (dto.getEditedAt() != null) {
-            post.setEditedAt(dto.getEditedAt());
-        }
+        post.setEditedAt(dto.getEditedAt());
 
         // Tagged colleges
         if (dto.getTaggedCollegeIds() != null && !dto.getTaggedCollegeIds().isEmpty()) {
@@ -101,33 +143,46 @@ public class PostServiceImpl implements PostService {
         // Image
         if (dto.getImageFile() != null && !dto.getImageFile().isEmpty()) {
             post.setImage(dto.getImageFile().getBytes());
+        } else if (dto.getImage() != null) {
+            post.setImage(dto.getImage()); // allow setting existing byte[] if present
         }
 
-        // Title
-        if (dto.getPostTitle() != null) {
-            post.setTitle(dto.getPostTitle());
+        Users author = null;
+        if (dto.getAuthorId() != null) {
+            author = userRepo.findById(dto.getAuthorId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        } else if (dto.getAuthorUsername() != null) {
+            author = userRepo.findByUsername(dto.getAuthorUsername())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         }
 
-        // Author
-        if (dto.getAuthorId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Author ID is required");
+        if (author == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Author information is required");
         }
-        Users author = userRepo.findById(dto.getAuthorId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         post.setAuthor(author);
 
         return post;
     }
 
+
     @Override
     @Transactional
     public PostDto createPost(PostDto postDto) throws IOException {
+        if (postDto == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Post data is required");
+        }
+
+        Users author = userRepo.findById(postDto.getAuthorId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
         Post post = toEntity(postDto);
+        post.setAuthor(author);
         post.setCreatedAt(LocalDateTime.now());
-        post.setAuthor(userRepo.findByUsername(postDto.getAuthorUsername()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")));
+
         Post saved = postRepo.save(post);
         return toDto(saved);
     }
+
 
     @Override
     @Transactional
@@ -135,17 +190,44 @@ public class PostServiceImpl implements PostService {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
-        if (!post.getAuthor().getId().equals(updatedPostDto.getAuthorId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized to edit this post");
+        if (updatedPostDto.getContent() != null) {
+            post.setContent(updatedPostDto.getContent());
         }
 
-        post.setContent(updatedPostDto.getContent());
-        post.setEditedAt(LocalDateTime.now());
-        post.setTaggedColleges(new HashSet<>(collegeRepo.findAllById(updatedPostDto.getTaggedCollegeIds())));
+        if (updatedPostDto.getPostTitle() != null) {
+            post.setTitle(updatedPostDto.getPostTitle());
+        }
 
-        Post updated = postRepo.save(post);
-        return toDto(updated);
+        if (updatedPostDto.getTaggedCollegeIds() != null) {
+            post.setTaggedColleges(new HashSet<>(collegeRepo.findAllById(updatedPostDto.getTaggedCollegeIds())));
+        }
+
+        post.setEditedAt(LocalDateTime.now());
+
+        Post saved = postRepo.save(post);
+        return toDto(saved);
     }
+
+    @Override
+    @Transactional
+    public PostDto uploadPostImage(Long postId, MultipartFile file, Long userId) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is required");
+        }
+
+        Post post = postRepo.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+
+        if (!post.getAuthor().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to update this post");
+        }
+
+        post.setImage(file.getBytes());
+        Post saved = postRepo.save(post);
+
+        return toDto(saved);
+    }
+
 
     @Override
     @Transactional
@@ -213,25 +295,36 @@ public class PostServiceImpl implements PostService {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
-        if (likeRepo.findByUserAndPost(user, post).isEmpty()) {
+        if (likeRepo.findByUserAndPost(user, post).isPresent()) {
             Like like = new Like();
             like.setUser(user);
             like.setPost(post);
+
             likeRepo.save(like);
+
+            // update both sides of the relationship
+            post.getLikes().add(like);
+            // optional: user.getLikes().add(like) if Users has a Set<Like>
         }
     }
+
 
     @Override
     @Transactional
     public void removeLike(Long postId, Long userId) {
+        // Fetch user
         Users user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Fetch post
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
+        // Delete like if it exists
         likeRepo.findByUserAndPost(user, post)
                 .ifPresent(likeRepo::delete);
     }
+
 
     @Override
     public Page<PostDto> getHomepagePosts(Long userCollegeId, Pageable pageable) {

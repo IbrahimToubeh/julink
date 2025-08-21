@@ -1,5 +1,6 @@
 package com.example.julink.bulk.controller;
 
+import com.example.julink.bulk.entity.Post;
 import com.example.julink.config.UserPrincipal;
 import com.example.julink.bulk.dto.CommentDto;
 import com.example.julink.bulk.dto.PostDto;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -72,14 +74,20 @@ public class BulkController {
 
     @PostMapping("/posts")
     public ResponseEntity<PostDto> createPost(@RequestBody PostDto postDto,
-                                              @AuthenticationPrincipal UserPrincipal userPrincipal,
-                                              @RequestParam("file") MultipartFile file) throws IOException {
+                                              @AuthenticationPrincipal UserPrincipal userPrincipal) throws IOException {
         postDto.setAuthorId(getUserId(userPrincipal));
-        postDto.setAuthorUsername(userPrincipal.getUsername());
-        postDto.setImageFile(file);
         PostDto created = postService.createPost(postDto);
         return ResponseEntity.ok(created);
     }
+
+    @PostMapping("/posts/{postId}/image")
+    public ResponseEntity<PostDto> uploadPostImage(@PathVariable Long postId,
+                                                   @RequestParam("file") MultipartFile file,
+                                                   @AuthenticationPrincipal UserPrincipal userPrincipal) throws IOException {
+        PostDto updated = postService.uploadPostImage(postId, file, getUserId(userPrincipal));
+        return ResponseEntity.ok(updated);
+    }
+
 
     @PutMapping("/posts/{postId}")
     public ResponseEntity<PostDto> editPost(@PathVariable Long postId,
@@ -142,6 +150,7 @@ public class BulkController {
         postService.addLike(postId, getUserId(userPrincipal));
         return ResponseEntity.ok().build();
     }
+
 
     @DeleteMapping("/posts/{postId}/like")
     public ResponseEntity<Void> removeLike(@PathVariable Long postId,
