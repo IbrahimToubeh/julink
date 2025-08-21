@@ -1,13 +1,12 @@
 package com.example.julink.bulk.controller;
 
-import com.example.julink.bulk.entity.Post;
-import com.example.julink.config.UserPrincipal;
 import com.example.julink.bulk.dto.CommentDto;
 import com.example.julink.bulk.dto.PostDto;
 import com.example.julink.bulk.dto.UpdateProfileDto;
 import com.example.julink.bulk.dto.UserProfileDto;
 import com.example.julink.bulk.service.PostService;
 import com.example.julink.bulk.service.ProfileService;
+import com.example.julink.config.UserPrincipal;
 import com.example.julink.entryrelated.entity.Users;
 import com.example.julink.entryrelated.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
@@ -24,15 +23,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class BulkController {
-    //todo: delete comment / delete post / delete account / deactivate account / follow user / view following list / followrs list / delete profile picture
-
 
     private final PostService postService;
     private final ProfileService profileService;
@@ -55,22 +52,63 @@ public class BulkController {
     public ResponseEntity<byte[]> getProfileImage(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         Users user = userRepo.findByUsername(userPrincipal.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
         byte[] image = user.getProfileImage();
-
         if (image == null) {
             return ResponseEntity.notFound().build();
         }
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.IMAGE_JPEG);
         headers.setContentLength(image.length);
-
         return new ResponseEntity<>(image, headers, HttpStatus.OK);
     }
 
-    // --- Posts ---
+    @DeleteMapping("/profile/profile-image")
+    public ResponseEntity<Void> deleteProfileImage(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        Long userId = getUserId(userPrincipal);
 
+        try {
+            profileService.deleteProfileImage(userId);
+        } catch (ResponseStatusException e) {
+            // Return 404 if user/profile not found
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @PutMapping("/profile/deactivate")
+    public ResponseEntity<Void> deactivateAccount(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        profileService.deactivateAccount(getUserId(userPrincipal));
+        return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/{followeeId}/follow")
+    public ResponseEntity<Void> followUser(@PathVariable Long followeeId,
+                                           @RequestParam Long followerId) {
+        postService.followUser(followerId, followeeId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{followeeId}/follow")
+    public ResponseEntity<Void> unfollowUser(@PathVariable Long followeeId,
+                                             @RequestParam Long followerId) {
+        postService.unfollowUser(followerId, followeeId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{userId}/following")
+    public ResponseEntity<Set<Users>> getFollowing(@PathVariable Long userId) {
+        Set<Users> following = postService.getFollowingList(userId);
+        return ResponseEntity.ok(following);
+    }
+
+    @GetMapping("/{userId}/followers")
+    public ResponseEntity<Set<Users>> getFollowers(@PathVariable Long userId) {
+        Set<Users> followers = postService.getFollowersList(userId);
+        return ResponseEntity.ok(followers);
+    }
+
+    // --- Posts ---
 
     @PostMapping("/posts")
     public ResponseEntity<PostDto> createPost(@RequestBody PostDto postDto,
@@ -87,7 +125,6 @@ public class BulkController {
         PostDto updated = postService.uploadPostImage(postId, file, getUserId(userPrincipal));
         return ResponseEntity.ok(updated);
     }
-
 
     @PutMapping("/posts/{postId}")
     public ResponseEntity<PostDto> editPost(@PathVariable Long postId,
@@ -106,12 +143,10 @@ public class BulkController {
     }
 
     @GetMapping("/posts")
-    public ResponseEntity<Page<PostDto>> getPosts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) Long collegeId,
-            @RequestParam(required = false) Long authorId) {
-
+    public ResponseEntity<Page<PostDto>> getPosts(@RequestParam(defaultValue = "0") int page,
+                                                  @RequestParam(defaultValue = "10") int size,
+                                                  @RequestParam(required = false) Long collegeId,
+                                                  @RequestParam(required = false) Long authorId) {
         Page<PostDto> posts = postService.getPosts(collegeId, authorId, PageRequest.of(page, size));
         return ResponseEntity.ok(posts);
     }
@@ -136,6 +171,13 @@ public class BulkController {
         return ResponseEntity.ok(updated);
     }
 
+    @DeleteMapping("/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId,
+                                              @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        postService.deleteComment(commentId, getUserId(userPrincipal));
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<List<CommentDto>> getCommentsByPost(@PathVariable Long postId) {
         List<CommentDto> comments = postService.getCommentsByPostId(postId);
@@ -150,7 +192,6 @@ public class BulkController {
         postService.addLike(postId, getUserId(userPrincipal));
         return ResponseEntity.ok().build();
     }
-
 
     @DeleteMapping("/posts/{postId}/like")
     public ResponseEntity<Void> removeLike(@PathVariable Long postId,
@@ -169,6 +210,9 @@ public class BulkController {
         Page<PostDto> posts = postService.getHomepagePosts(userCollegeId, PageRequest.of(page, size));
         return ResponseEntity.ok(posts);
     }
+
+
+
 
     // --- Helper methods ---
 

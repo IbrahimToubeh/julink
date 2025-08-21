@@ -24,10 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -90,6 +87,7 @@ public class PostServiceImpl implements PostService {
 
         return dto;
     }
+
 
 
     private CommentDto toDto(Comment comment) {
@@ -227,6 +225,72 @@ public class PostServiceImpl implements PostService {
 
         return toDto(saved);
     }
+    @Override
+    @Transactional
+    public void deleteComment(Long commentId, Long userId) {
+        Comment comment = commentRepo.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+
+        if (!comment.getCommenter().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized to delete this comment");
+        }
+
+        commentRepo.delete(comment);
+    }
+
+    @Transactional
+    public void deactivateAccount(Long userId) {
+        Users user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        // Optionally: remove posts, comments, likes, etc.
+        user.setActive(false);
+        userRepo.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void followUser(Long followerId, Long followeeId) {
+        if (followerId.equals(followeeId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot follow yourself");
+        }
+
+        Users follower = userRepo.findById(followerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Follower not found"));
+        Users followee = userRepo.findById(followeeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Followee not found"));
+
+        follower.getFollowing().add(followee);
+        userRepo.save(follower);
+    }
+
+    @Override
+    @Transactional
+    public void unfollowUser(Long followerId, Long followeeId) {
+        Users follower = userRepo.findById(followerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Follower not found"));
+        Users followee = userRepo.findById(followeeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Followee not found"));
+
+        follower.getFollowing().remove(followee);
+        userRepo.save(follower);
+    }
+
+    @Override
+    public Set<Users> getFollowingList(Long userId) {
+        Users user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        return user.getFollowing();
+    }
+
+    @Override
+    public Set<Users> getFollowersList(Long userId) {
+        Users user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        return user.getFollowers();
+    }
+
+
 
 
     @Override
@@ -295,34 +359,28 @@ public class PostServiceImpl implements PostService {
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
-        if (likeRepo.findByUserAndPost(user, post).isPresent()) {
+        if (likeRepo.findByUserAndPost(user, post).isEmpty()) {
             Like like = new Like();
             like.setUser(user);
             like.setPost(post);
-
             likeRepo.save(like);
-
-            // update both sides of the relationship
             post.getLikes().add(like);
-            // optional: user.getLikes().add(like) if Users has a Set<Like>
         }
     }
-
 
     @Override
     @Transactional
     public void removeLike(Long postId, Long userId) {
-        // Fetch user
         Users user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        // Fetch post
         Post post = postRepo.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
 
-        // Delete like if it exists
         likeRepo.findByUserAndPost(user, post)
-                .ifPresent(likeRepo::delete);
+                .ifPresent(like -> {
+                    likeRepo.delete(like);
+                    post.getLikes().remove(like);
+                });
     }
 
 
@@ -335,17 +393,25 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Page<PostDto> getPosts(Long collegeId, Long authorId, PageRequest of) {
+        Page<Post> posts;
         if (collegeId != null) {
-            return postRepo.findByTaggedCollegeId(collegeId, of)
-                    .map(postMapper::toDto);
+            posts = postRepo.findByTaggedCollegeId(collegeId, of);
+        } else if (authorId != null) {
+            posts = postRepo.findByAuthorId(authorId, of);
+        } else {
+            posts = postRepo.findAll(of);
         }
-        if (authorId != null) {
-            return postRepo.findByAuthorId(authorId, of)
-                    .map(postMapper::toDto);
-        }
-        return postRepo.findAll(of)
-                .map(postMapper::toDto);
+
+        return posts.map(post -> {
+            PostDto dto = postMapper.toDto(post);
+            dto.setLikeCount(likeRepo.countByPost(post)); // manually set like count
+            dto.setAuthorId(post.getAuthor() != null ? post.getAuthor().getId() : null);
+            dto.setPostTitle(post.getTitle());
+            dto.setImage(post.getImage());
+            return dto;
+        });
     }
+
 
 
 

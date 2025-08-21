@@ -8,5 +8,6 @@ import org.springframework.stereotype.Component;
 public interface ProfileService {
    UserProfileDto getProfile(String username);
    UserProfileDto updateProfile(String username, UpdateProfileDto updateDto);
-
+   void deactivateAccount(Long userId);
+   void deleteProfileImage(long userId);
 }

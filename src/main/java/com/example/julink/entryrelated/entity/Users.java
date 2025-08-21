@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Getter
 @Setter
@@ -45,5 +48,17 @@ public class Users {
     @Column(name = "profile_image")
     private byte[] profileImage;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_following",
+            joinColumns = @JoinColumn(name = "follower_id"),
+            inverseJoinColumns = @JoinColumn(name = "followee_id")
+    )
+    private Set<Users> following = new HashSet<>();
 
+    @ManyToMany(mappedBy = "following")
+    private Set<Users> followers = new HashSet<>();
+
+    @Column(nullable = false)
+    private boolean active = true;
 }
