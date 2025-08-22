@@ -8,9 +8,8 @@ import lombok.*;
 @Table(name = "colleges")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
 public class College {
 
     @Id
@@ -19,4 +18,11 @@ public class College {
 
     @Column(nullable = false, unique = true)
     private String name;
+    public College(String name) {
+        this.name = name;
+    }
+
+    public College() {
+
+    }
 }
