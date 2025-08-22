@@ -350,6 +350,18 @@ public class PostServiceImpl implements PostService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Page<PostDto> getPostsLikedByUser(Long userId, Pageable pageable) {
+        Page<Like> likes = likeRepo.findByUserId(userId, pageable);
+        return likes.map(like -> toDto(like.getPost()));
+    }
+
+    @Override
+    public Page<PostDto> getPostsCommentedByUser(Long userId, Pageable pageable) {
+        Page<Comment> comments = commentRepo.findDistinctByCommenterId(userId, pageable);
+        return comments.map(comment -> toDto(comment.getPost()));
+    }
+
 
     @Override
     @Transactional

@@ -34,6 +34,10 @@ public interface PostService {
     Set<Users> getFollowingList(Long userId);
     Set<Users> getFollowersList(Long userId);
 
+    Page<PostDto> getPostsLikedByUser(Long userId, Pageable pageable);
+    Page<PostDto> getPostsCommentedByUser(Long userId, Pageable pageable);
+
+
 
 
 }

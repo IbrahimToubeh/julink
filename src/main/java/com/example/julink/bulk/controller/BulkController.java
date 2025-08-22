@@ -69,7 +69,6 @@ public class BulkController {
         try {
             profileService.deleteProfileImage(userId);
         } catch (ResponseStatusException e) {
-            // Return 404 if user/profile not found
             return ResponseEntity.notFound().build();
         }
 
@@ -108,6 +107,35 @@ public class BulkController {
         return ResponseEntity.ok(followers);
     }
 
+    @GetMapping("/posts")
+    public ResponseEntity<Page<PostDto>> getPosts(@RequestParam(defaultValue = "0") int page,
+                                                  @RequestParam(defaultValue = "10") int size,
+                                                  @RequestParam(required = false) Long collegeId,
+                                                  @RequestParam(required = false) Long authorId) {
+        Page<PostDto> posts = postService.getPosts(collegeId, authorId, PageRequest.of(page, size));
+        return ResponseEntity.ok(posts);
+    }
+
+
+
+    @GetMapping("/profile/liked-posts")
+    public ResponseEntity<Page<PostDto>> getLikedPosts(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                       @RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "10") int size) {
+        Long userId = getUserId(userPrincipal);
+        Page<PostDto> likedPosts = postService.getPostsLikedByUser(userId, PageRequest.of(page, size));
+        return ResponseEntity.ok(likedPosts);
+    }
+
+    @GetMapping("/profile/commented-posts")
+    public ResponseEntity<Page<PostDto>> getCommentedPosts(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                           @RequestParam(defaultValue = "0") int page,
+                                                           @RequestParam(defaultValue = "10") int size) {
+        Long userId = getUserId(userPrincipal);
+        Page<PostDto> commentedPosts = postService.getPostsCommentedByUser(userId, PageRequest.of(page, size));
+        return ResponseEntity.ok(commentedPosts);
+    }
+
     // --- Posts ---
 
     @PostMapping("/posts")
@@ -142,14 +170,7 @@ public class BulkController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/posts")
-    public ResponseEntity<Page<PostDto>> getPosts(@RequestParam(defaultValue = "0") int page,
-                                                  @RequestParam(defaultValue = "10") int size,
-                                                  @RequestParam(required = false) Long collegeId,
-                                                  @RequestParam(required = false) Long authorId) {
-        Page<PostDto> posts = postService.getPosts(collegeId, authorId, PageRequest.of(page, size));
-        return ResponseEntity.ok(posts);
-    }
+
 
     // --- Comments ---
 
@@ -183,6 +204,7 @@ public class BulkController {
         List<CommentDto> comments = postService.getCommentsByPostId(postId);
         return ResponseEntity.ok(comments);
     }
+
 
     // --- Likes ---
 
