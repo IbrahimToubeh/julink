@@ -14,6 +14,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.transaction.Transactional;
 
+import java.time.LocalDateTime;
+
 @RequiredArgsConstructor
 @Service
 public class ProfileServiceImpl implements ProfileService {
@@ -55,8 +57,10 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         user.setActive(false);
+        user.setDeactivatedAt(LocalDateTime.now());
         userRepo.save(user);
     }
+
 
 
 

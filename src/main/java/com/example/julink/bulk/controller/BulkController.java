@@ -216,6 +216,10 @@ public class BulkController {
         postService.removeLike(postId, getUserId(userPrincipal));
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/posts/{postId}/like")
+    public ResponseEntity<Boolean> isLiked(@PathVariable Long postId,@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(postService.isLikedByUser(userPrincipal.getUsername(),postId));
+    }
 
     // --- Homepage Posts ---
 

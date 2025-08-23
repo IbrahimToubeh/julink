@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -61,4 +62,7 @@ public class Users {
 
     @Column(nullable = false)
     private boolean active = true;
+    @Column(name = "deactivated_at")
+    private LocalDateTime deactivatedAt;
+
 }

@@ -50,7 +50,9 @@ public class PostServiceImpl implements PostService {
         PostDto dto = new PostDto();
 
         // ID
-        dto.setId(post.getId());
+        if(post.getId() != null) {
+            dto.setId(post.getId());
+        }
 
         // Author
         if (post.getAuthor() != null) {
@@ -239,15 +241,6 @@ public class PostServiceImpl implements PostService {
         commentRepo.delete(comment);
     }
 
-    @Transactional
-    public void deactivateAccount(Long userId) {
-        Users user = userRepo.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        // Optionally: remove posts, comments, likes, etc.
-        user.setActive(false);
-        userRepo.save(user);
-    }
 
     @Override
     @Transactional
@@ -403,6 +396,18 @@ public class PostServiceImpl implements PostService {
                     post.getLikes().remove(like);
                 });
     }
+
+    @Override
+    public boolean isLikedByUser(String username, long postId) {
+        Users user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        Post post = postRepo.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Post not found"));
+
+        return likeRepo.findByUserAndPost(user, post).isPresent();
+    }
+
 
 
     @Override

@@ -26,6 +26,7 @@ public interface PostService {
 
     void addLike(Long postId, Long userId);
     void removeLike(Long postId, Long userId);
+    boolean isLikedByUser(String username,long postId);
 
     Page<PostDto> getHomepagePosts(Long userCollegeId, Pageable pageable);
     Page<PostDto> getPosts(Long collegeId, Long authorId, PageRequest of);

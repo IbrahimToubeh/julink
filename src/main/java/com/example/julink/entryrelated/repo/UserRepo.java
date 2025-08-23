@@ -3,6 +3,8 @@ package com.example.julink.entryrelated.repo;
 import com.example.julink.entryrelated.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepo extends JpaRepository<Users, Long> {
@@ -14,5 +16,6 @@ public interface UserRepo extends JpaRepository<Users, Long> {
 
     boolean existsByEmail(String email);
 
+    List<Users> findByActiveFalseAndDeactivatedAtBefore(LocalDateTime dateTime);
 
 }

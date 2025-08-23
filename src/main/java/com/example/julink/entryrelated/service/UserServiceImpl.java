@@ -45,6 +45,11 @@ public class UserServiceImpl implements UserService {
                 new UsernamePasswordAuthenticationToken(loginUserRequestDTO.username(),loginUserRequestDTO.password())
         );
         if (auth.isAuthenticated()) {
+            Users user = (Users) auth.getPrincipal();
+            if (!user.isActive()){
+                user.setActive(true);
+                user.setDeactivatedAt(null);
+            }
             return jwtService.generateToken((UserDetails) auth.getPrincipal());
         }
         throw new RuntimeException("Invalid username or password");
