@@ -2,6 +2,7 @@ package com.example.julink.bulk.service;
 
 import com.example.julink.bulk.dto.CommentDto;
 import com.example.julink.bulk.dto.PostDto;
+import com.example.julink.bulk.dto.UserMiniDto;
 import com.example.julink.entryrelated.entity.Users;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,8 +32,8 @@ public interface PostService {
     List<CommentDto> getCommentsByPostId(Long postId);
     void followUser(Long followerId, Long followeeId);
     void unfollowUser(Long followerId, Long followeeId);
-    Set<Users> getFollowingList(Long userId);
-    Set<Users> getFollowersList(Long userId);
+    Set<UserMiniDto> getFollowingList(Long userId);
+    Set<UserMiniDto> getFollowersList(Long userId);
 
     Page<PostDto> getPostsLikedByUser(Long userId, Pageable pageable);
     Page<PostDto> getPostsCommentedByUser(Long userId, Pageable pageable);

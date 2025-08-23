@@ -2,6 +2,7 @@ package com.example.julink.bulk.service.impl;
 
 import com.example.julink.bulk.dto.CommentDto;
 import com.example.julink.bulk.dto.PostDto;
+import com.example.julink.bulk.dto.UserMiniDto;
 import com.example.julink.bulk.entity.*;
 import com.example.julink.bulk.repositories.CollegeRepository;
 import com.example.julink.bulk.repositories.CommentRepo;
@@ -277,17 +278,25 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Set<Users> getFollowingList(Long userId) {
+    public Set<UserMiniDto> getFollowingList(Long userId) {
         Users user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return user.getFollowing();
+
+        return user.getFollowing()
+                .stream()
+                .map(u -> new UserMiniDto(u.getId(), u.getUsername(), u.getProfileImage()))
+                .collect(Collectors.toSet());
     }
 
     @Override
-    public Set<Users> getFollowersList(Long userId) {
+    public Set<UserMiniDto> getFollowersList(Long userId) {
         Users user = userRepo.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return user.getFollowers();
+
+        return user.getFollowers()
+                .stream()
+                .map(u -> new UserMiniDto(u.getId(), u.getUsername(), u.getProfileImage()))
+                .collect(Collectors.toSet());
     }
 
 

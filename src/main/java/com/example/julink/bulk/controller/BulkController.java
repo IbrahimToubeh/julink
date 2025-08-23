@@ -1,9 +1,6 @@
 package com.example.julink.bulk.controller;
 
-import com.example.julink.bulk.dto.CommentDto;
-import com.example.julink.bulk.dto.PostDto;
-import com.example.julink.bulk.dto.UpdateProfileDto;
-import com.example.julink.bulk.dto.UserProfileDto;
+import com.example.julink.bulk.dto.*;
 import com.example.julink.bulk.service.PostService;
 import com.example.julink.bulk.service.ProfileService;
 import com.example.julink.config.UserPrincipal;
@@ -96,15 +93,13 @@ public class BulkController {
     }
 
     @GetMapping("/{userId}/following")
-    public ResponseEntity<Set<Users>> getFollowing(@PathVariable Long userId) {
-        Set<Users> following = postService.getFollowingList(userId);
-        return ResponseEntity.ok(following);
+    public ResponseEntity<Set<UserMiniDto>> getFollowing(@PathVariable Long userId) {
+        return ResponseEntity.ok( postService.getFollowingList(userId));
     }
 
     @GetMapping("/{userId}/followers")
-    public ResponseEntity<Set<Users>> getFollowers(@PathVariable Long userId) {
-        Set<Users> followers = postService.getFollowersList(userId);
-        return ResponseEntity.ok(followers);
+    public ResponseEntity<Set<UserMiniDto>> getFollowers(@PathVariable Long userId) {
+        return ResponseEntity.ok(postService.getFollowersList(userId));
     }
 
     @GetMapping("/posts")
